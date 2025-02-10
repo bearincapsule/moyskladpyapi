@@ -1,206 +1,148 @@
-import requests
+import asyncio
+import aiohttp
 import pandas as pd
 import json
 import os
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, Menu
+from aiohttp import ClientSession
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
 
-EMAILS_FILE = "used_emails.json"
+# Base API URL
+BASE_URL = "https://api.moysklad.ru/api/remap/1.2/entity"
 
 # API Endpoints
-FOLDERS_URL = 'https://api.moysklad.ru/api/remap/1.2/entity/productfolder'
-ASSORTMENT_URL = 'https://api.moysklad.ru/api/remap/1.2/entity/assortment'
+ENDPOINTS = {
+    "product": f"{BASE_URL}/product",
+    "folders": f"{BASE_URL}/productfolder",
+    "assortment": f"{BASE_URL}/assortment",
+    "variants": f"{BASE_URL}/variant"
+}
 
-auth = None  # Global variable to store authentication credentials
+EMAILS_FILE = "used_emails.json"
 
-def load_used_emails():
-    if os.path.exists(EMAILS_FILE):
-        with open(EMAILS_FILE, "r") as file:
-            try:
-                data = json.load(file)
-                return data if isinstance(data, dict) else {}
-            except json.JSONDecodeError:
-                return {}
-    return {}
+# Global variables
+auth = None  # Store authentication credentials
+folder_metadata = {}  # Dictionary for folder metadata
 
-def save_used_email(email, name):
-    emails = load_used_emails()
-    emails[email] = name
-    with open(EMAILS_FILE, "w") as file:
-        json.dump(emails, file)
+def build_folder_tree(folders):
+    folder_dict = {None: []}  # Root level folders
+    for folder in folders:
+        parent_href = folder.get('productFolder', {}).get('meta', {}).get('href')
+        if parent_href not in folder_dict:
+            folder_dict[parent_href] = []
+        folder_dict[parent_href].append(folder)
+    return folder_dict
 
-def delete_email():
-    emails = load_used_emails()
-    if not emails:
-        messagebox.showinfo("Info", "No saved emails to delete.")
-        return
-    selected_email = simpledialog.askstring("Delete Email", "Select email to delete:", initialvalue=list(emails.keys())[0])
-    if selected_email and selected_email in emails:
-        del emails[selected_email]
-        with open(EMAILS_FILE, "w") as file:
-            json.dump(emails, file)
-        messagebox.showinfo("Success", f"Deleted {selected_email}")
+async def fetch_data(session, endpoint, params=None):
+    url = ENDPOINTS[endpoint]
+    for _ in range(3):  # Retry up to 3 times
+        try:
+            async with session.get(url, params=params, auth=auth, timeout=10) as response:
+                if response.status == 200:
+                    return await response.json()
+                elif response.status == 429:
+                    await asyncio.sleep(1)  # Rate limit handling
+        except aiohttp.ClientError:
+            await asyncio.sleep(1)
+    return None  # Return None if all retries fail
 
-def fill_email(event):
-    selected_name = email_entry.get()
-    emails = load_used_emails()
-    email = next((e for e, n in emails.items() if n == selected_name), None)
-    if email:
-        email_entry.set(email)
+async def fetch_folders():
+    async with ClientSession() as session:
+        data = await fetch_data(session, "folders")
+        return data.get('rows', []) if data else []
 
-def fetch_all_folders(auth):
-    response = requests.get(FOLDERS_URL, auth=auth)
-    if response.status_code != 200:
-        messagebox.showerror("Error", "Error fetching folders.")
-        return []
-    return response.json().get('rows', [])
+async def fetch_products(folder_hrefs):
+    async with ClientSession() as session:
+        tasks = [fetch_data(session, "assortment", {'filter': f'productFolder={href}', 'limit': 1000}) for href in folder_hrefs]
+        responses = await asyncio.gather(*tasks)
+        products = [p for res in responses if res for p in res.get('rows', []) if p.get('stock', 0) > 0]
+        return products
 
-def get_parent_folders(folders):
-    return [folder for folder in folders if 'productFolder' not in folder]
+async def fetch_variants(product_id):
+    async with ClientSession() as session:
+        data = await fetch_data(session, "variants", {"filter": f"product={product_id}"})
+        if not data:
+            return "No Category"
+        return ", ".join([char.get("value", "") for v in data.get('rows', []) for char in v.get("characteristics", []) if char.get("value")]) or "No Category"
 
-def get_subfolders(folders, parent_folder_id):
-    return [folder for folder in folders if folder.get('productFolder', {}).get('meta', {}).get('href') == parent_folder_id]
-
-def get_all_subfolders(folders, parent_folder_id):
-    subfolders = get_subfolders(folders, parent_folder_id)
-    all_subfolders = subfolders[:]
-    for subfolder in subfolders:
-        all_subfolders.extend(get_all_subfolders(folders, subfolder['meta']['href']))
-    return all_subfolders
-
-def fetch_products(folder_hrefs, auth):
-    products = []
-    limit = 1000
+async def process_data(folder_hrefs, folder_name):
+    products = await fetch_products(folder_hrefs)
     
-    for folder_href in folder_hrefs:
-        offset = 0
-        while True:
-            params = {
-                'filter': f'productFolder={folder_href}',
-                'limit': limit,
-                'offset': offset
-            }
-            response = requests.get(ASSORTMENT_URL, auth=auth, params=params)
-            if response.status_code != 200:
-                messagebox.showerror("Error", "Error fetching products.")
-                break
-            data = response.json().get('rows', [])
-            products.extend(data)
-            if len(data) < limit:
-                break
-            offset += limit
-    return products
-
-def export_to_excel(products, folder_name):
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"{folder_name}_{timestamp}.xlsx"
-    for product in products:
-    # Extract barcodes and format them to include only numbers
-        barcodes = []
-        for barcode in product.get('barcodes', []):
-            if isinstance(barcode, dict):
-                for key, value in barcode.items():
-                    if isinstance(value, str) and value.isdigit():
-                        barcodes.append(value)
-                    elif isinstance(value, str):
-                        # Extract numbers from strings like "ean13: 2000000079790"
-                        numbers = ''.join(filter(str.isdigit, value))
-                        if numbers:
-                            barcodes.append(numbers)
-
-    # Join barcodes into a single string (comma-separated)
-    barcodes_str = ', '.join(barcodes)
-    df = pd.DataFrame([{ 
-        'Code': p.get('code', ''), 
-        'Name': p.get('name', ''), 
-        'Barcode': barcodes_str
-    } for p in products])
+    tasks = [fetch_variants(p.get('id', '')) for p in products]
+    categories = await asyncio.gather(*tasks)
+    
+    data = []
+    for i, p in enumerate(products):
+        data.append([
+            p.get('pathName', 'Unknown'),
+            p.get('name', 'No Name'),
+            categories[i],
+            p.get('code', 'No Code'),
+            p.get('salePrices', [{}])[0].get('value', 0) / 100,
+            p.get('stock', 0)
+        ])
+    
+    df = pd.DataFrame(data, columns=["Category", "Product Name", "Categories", "Code", "Price", "Stock"])
+    filename = f"{folder_name}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.xlsx"
     df.to_excel(filename, index=False)
     messagebox.showinfo("Success", f"Data exported to {filename}")
 
-def open_main_menu(root, auth, email, name):
-    for widget in root.winfo_children():
-        widget.destroy()
+def open_main_menu(root, auth_param):
+    global auth
+    auth = auth_param
     
-    tree = ttk.Treeview(root)
-    tree.heading("#0", text="Folders", anchor=tk.W)
-    tree.pack(expand=True, fill=tk.BOTH)
+    async def init_folders():
+        all_folders = await fetch_folders()
+        folder_dict = build_folder_tree(all_folders)
+        
+        for widget in root.winfo_children():
+            widget.destroy()
+        
+        tree = ttk.Treeview(root)
+        tree.heading("#0", text="Folders", anchor=tk.W)
+        tree.pack(expand=True, fill=tk.BOTH)
+        
+        def populate_tree(parent, folders):
+            for folder in folders:
+                folder_id = tree.insert(parent, "end", text=folder['name'], open=False)
+                folder_metadata[folder_id] = folder['meta']['href']
+                populate_tree(folder_id, folder_dict.get(folder['meta']['href'], []))
+        
+        populate_tree("", folder_dict.get(None, []))
+        
+        def on_fetch():
+            selected_item = tree.selection()
+            if not selected_item:
+                messagebox.showerror("Error", "Please select a folder.")
+                return
+            selected_folder_href = folder_metadata[selected_item[0]]
+            asyncio.run(process_data([selected_folder_href], tree.item(selected_item[0], 'text')))
+        
+        fetch_button = tk.Button(root, text="Fetch Products", command=on_fetch)
+        fetch_button.pack(pady=10)
     
-    all_folders = fetch_all_folders(auth)
-    parent_folders = get_parent_folders(all_folders)
-    folder_dict = {}
-    
-    def populate_tree(parent, folders):
-        for folder in folders:
-            folder_id = tree.insert(parent, "end", text=folder['name'], open=False)
-            folder_dict[folder_id] = (folder['meta']['href'], folder['name'])
-            subfolders = get_subfolders(all_folders, folder['meta']['href'])
-            if subfolders:
-                populate_tree(folder_id, subfolders)
-    
-    populate_tree("", parent_folders)
-    
-    def on_fetch():
-        selected_item = tree.selection()
-        if not selected_item:
-            messagebox.showerror("Error", "Please select a folder.")
-            return
-        selected_folder, folder_name = folder_dict[selected_item[0]]
-        fetch_subfolders = messagebox.askyesno("Fetch", "Do you want to include subfolders?")
-        selected_folders = [selected_folder]
-        if fetch_subfolders:
-            selected_folders.extend([sf['meta']['href'] for sf in get_all_subfolders(all_folders, selected_folder)])
-        products = fetch_products(selected_folders, auth)
-        if products:
-            export_to_excel(products, folder_name)
-        else:
-            messagebox.showinfo("Info", "No products found.")
-    
-    fetch_button = tk.Button(root, text="Fetch Products", command=on_fetch)
-    fetch_button.pack(pady=10)
+    asyncio.run(init_folders())
 
 def create_gui():
     root = tk.Tk()
     root.title("MoySklad Product Fetcher")
     root.geometry("600x400")
-    
-    menu_bar = Menu(root)
-    root.config(menu=menu_bar)
-    
-    email_menu = Menu(menu_bar, tearoff=0)
-    menu_bar.add_cascade(label="Saved Emails", menu=email_menu)
-    email_menu.add_command(label="Delete Saved Email", command=delete_email)
-    
-    tk.Label(root, text="Select your account:").pack()
-    used_emails = load_used_emails()
-    names_list = list(used_emails.values())
-    global email_entry
-    email_entry = ttk.Combobox(root, values=names_list)
-    email_entry.pack(ipadx=50)
-    email_entry.bind("<<ComboboxSelected>>", fill_email)
-    
+    tk.Label(root, text="Enter your MoySklad email:").pack()
+    email_entry = tk.Entry(root)
+    email_entry.pack()
     tk.Label(root, text="Enter your MoySklad password:").pack()
     password_entry = tk.Entry(root, show="*")
-    password_entry.pack(ipadx=50)
+    password_entry.pack()
     
-    def authenticate(event=None):
+    def authenticate():
         global auth
-        emails = load_used_emails()
-        email = email_entry.get()
-        password = password_entry.get()
-        name = next((n for e, n in emails.items() if e == email), None)
-        if name is None:
-            name = simpledialog.askstring("User Name", "Enter a name for this email:")
-        save_used_email(email, name)
-        auth = HTTPBasicAuth(email, password)
-        open_main_menu(root, auth, email, name)
+        auth = HTTPBasicAuth(email_entry.get(), password_entry.get())
+        open_main_menu(root, auth)
     
     login_button = tk.Button(root, text="Login", command=authenticate)
-    login_button.pack(pady=10)
-    root.bind("<Return>", authenticate)
-    
+    login_button.pack()
     root.mainloop()
 
 if __name__ == "__main__":
