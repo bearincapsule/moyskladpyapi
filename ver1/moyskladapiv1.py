@@ -96,9 +96,9 @@ def fetch_products(folder_hrefs, auth):
 def export_to_excel(products, folder_name):
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     filename = f"{folder_name}_{timestamp}.xlsx"
+    barcodes = []
     for product in products:
     # Extract barcodes and format them to include only numbers
-        barcodes = []
         for barcode in product.get('barcodes', []):
             if isinstance(barcode, dict):
                 for key, value in barcode.items():
