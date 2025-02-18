@@ -84,6 +84,7 @@ def export_to_excel(products, folder_name):
             'Barcode': ', '.join(
                 ''.join(filter(str.isdigit, bc.get('ean13', ''))) for bc in p.get('barcodes', [])
             )
+            ''
         }
         for p in products
     ])

@@ -1,0 +1,424 @@
+{
+    "context" : {
+      "employee" : {
+        "meta" : {
+          "href" : "https://api.moysklad.ru/api/remap/1.2/context/employee",
+          "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/employee/metadata",
+          "type" : "employee",
+          "mediaType" : "application/json"
+        }
+      }
+    },
+    "meta" : {
+      "href" : "https://api.moysklad.ru/api/remap/1.2/entity/assortment?filter=stockMode=positiveOnly",
+      "type" : "assortment",
+      "mediaType" : "application/json",
+      "size" : 599,
+      "limit" : 1000,
+      "offset" : 0
+    },
+    "rows" : [ {
+      "meta" : {
+        "href" : "https://api.moysklad.ru/api/remap/1.2/entity/variant/1102b784-7022-11ef-0a80-083e000dcb16",
+        "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/variant/metadata",
+        "type" : "variant",
+        "mediaType" : "application/json",
+        "uuidHref" : "https://online.moysklad.ru/app/#feature/edit?id=1102b0e1-7022-11ef-0a80-083e000dcb14"
+      },
+      "id" : "1102b784-7022-11ef-0a80-083e000dcb16",
+      "accountId" : "0defad53-ee34-11eb-0a80-04fd00015f8f",
+      "updated" : "2024-09-18 13:13:04.221",
+      "name" : "Ноутбук Apple MacBook Pro 13\" Model A2251 2020 i7 32Gb SSD 500Gb TouchBar 4 Thunderbolt (A)",
+      "code" : "03622",
+      "externalCode" : "-vbakv4VirtkNwHeH61lJ2",
+      "archived" : false,
+      "characteristics" : [ {
+        "meta" : {
+          "href" : "https://api.moysklad.ru/api/remap/1.2/entity/variant/metadata/characteristics/a20e988c-219f-11ee-0a80-08cc00005fd7",
+          "type" : "attributemetadata",
+          "mediaType" : "application/json"
+        },
+        "id" : "a20e988c-219f-11ee-0a80-08cc00005fd7",
+        "name" : "Категория",
+        "value" : "A"
+      } ],
+      "images" : {
+        "meta" : {
+          "href" : "https://api.moysklad.ru/api/remap/1.2/entity/variant/1102b784-7022-11ef-0a80-083e000dcb16/images",
+          "type" : "image",
+          "mediaType" : "application/json",
+          "size" : 0,
+          "limit" : 1000,
+          "offset" : 0
+        }
+      },
+      "salePrices" : [ {
+        "value" : 8000000.0,
+        "currency" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/0e237a72-ee34-11eb-0a80-09c500003365",
+            "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+            "type" : "currency",
+            "mediaType" : "application/json",
+            "uuidHref" : "https://online.moysklad.ru/app/#currency/edit?id=0e237a72-ee34-11eb-0a80-09c500003365"
+          }
+        },
+        "priceType" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/0e248e2b-ee34-11eb-0a80-09c500003366",
+            "type" : "pricetype",
+            "mediaType" : "application/json"
+          },
+          "id" : "0e248e2b-ee34-11eb-0a80-09c500003366",
+          "name" : "Цена розница",
+          "externalCode" : "cbcf493b-55bc-11d9-848a-00112f43529a"
+        }
+      }, {
+        "value" : 8500000.0,
+        "currency" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/0e237a72-ee34-11eb-0a80-09c500003365",
+            "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+            "type" : "currency",
+            "mediaType" : "application/json",
+            "uuidHref" : "https://online.moysklad.ru/app/#currency/edit?id=0e237a72-ee34-11eb-0a80-09c500003365"
+          }
+        },
+        "priceType" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/6a196cc2-8931-11ee-0a80-09970012548b",
+            "type" : "pricetype",
+            "mediaType" : "application/json"
+          },
+          "id" : "6a196cc2-8931-11ee-0a80-09970012548b",
+          "name" : "Цена маркетплейс",
+          "externalCode" : "b3384235-36b2-4fc4-b310-2898e69bbe46"
+        }
+      }, {
+        "value" : 0.0,
+        "currency" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/0e237a72-ee34-11eb-0a80-09c500003365",
+            "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+            "type" : "currency",
+            "mediaType" : "application/json",
+            "uuidHref" : "https://online.moysklad.ru/app/#currency/edit?id=0e237a72-ee34-11eb-0a80-09c500003365"
+          }
+        },
+        "priceType" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/6a196ed7-8931-11ee-0a80-09970012548c",
+            "type" : "pricetype",
+            "mediaType" : "application/json"
+          },
+          "id" : "6a196ed7-8931-11ee-0a80-09970012548c",
+          "name" : "Цена с НДС",
+          "externalCode" : "20c01bd6-7070-4f1c-be3e-7ccff8fab593"
+        }
+      }, {
+        "value" : 9500000.0,
+        "currency" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/0e237a72-ee34-11eb-0a80-09c500003365",
+            "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+            "type" : "currency",
+            "mediaType" : "application/json",
+            "uuidHref" : "https://online.moysklad.ru/app/#currency/edit?id=0e237a72-ee34-11eb-0a80-09c500003365"
+          }
+        },
+        "priceType" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/9100fd5b-943f-11ed-0a80-100800045a8c",
+            "type" : "pricetype",
+            "mediaType" : "application/json"
+          },
+          "id" : "9100fd5b-943f-11ed-0a80-100800045a8c",
+          "name" : "Цена до скидки",
+          "externalCode" : "f7651362-5f4f-4083-8826-2cf8ec28db92"
+        }
+      }, {
+        "value" : 0.0,
+        "currency" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/0e237a72-ee34-11eb-0a80-09c500003365",
+            "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+            "type" : "currency",
+            "mediaType" : "application/json",
+            "uuidHref" : "https://online.moysklad.ru/app/#currency/edit?id=0e237a72-ee34-11eb-0a80-09c500003365"
+          }
+        },
+        "priceType" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/6a196fcf-8931-11ee-0a80-09970012548d",
+            "type" : "pricetype",
+            "mediaType" : "application/json"
+          },
+          "id" : "6a196fcf-8931-11ee-0a80-09970012548d",
+          "name" : "Цена мелкий опт",
+          "externalCode" : "048b7aa4-6522-444d-84d3-bd909a6fa8c0"
+        }
+      }, {
+        "value" : 0.0,
+        "currency" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/0e237a72-ee34-11eb-0a80-09c500003365",
+            "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+            "type" : "currency",
+            "mediaType" : "application/json",
+            "uuidHref" : "https://online.moysklad.ru/app/#currency/edit?id=0e237a72-ee34-11eb-0a80-09c500003365"
+          }
+        },
+        "priceType" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/6a197049-8931-11ee-0a80-09970012548e",
+            "type" : "pricetype",
+            "mediaType" : "application/json"
+          },
+          "id" : "6a197049-8931-11ee-0a80-09970012548e",
+          "name" : "Цена средний опт",
+          "externalCode" : "9555ce05-20db-46c3-933f-467e71c92617"
+        }
+      }, {
+        "value" : 0.0,
+        "currency" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/0e237a72-ee34-11eb-0a80-09c500003365",
+            "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+            "type" : "currency",
+            "mediaType" : "application/json",
+            "uuidHref" : "https://online.moysklad.ru/app/#currency/edit?id=0e237a72-ee34-11eb-0a80-09c500003365"
+          }
+        },
+        "priceType" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/6a1970a3-8931-11ee-0a80-09970012548f",
+            "type" : "pricetype",
+            "mediaType" : "application/json"
+          },
+          "id" : "6a1970a3-8931-11ee-0a80-09970012548f",
+          "name" : "Цена крупный опт",
+          "externalCode" : "54e903f3-dee9-491f-83ea-1f0206993c99"
+        }
+      } ],
+      "barcodes" : [ {
+        "ean13" : "2000000071749"
+      } ],
+      "things" : [ "C02DQM0AML7H", "C02DW8QYML85", "C02F51GHML85", "C02FJ0DMML85", "C02FJ0EFML85", "C02FJ0GSML85", "C02FJ0P7ML85", "C02FJ0PYML85", "C02FJ0TRML85", "C02FJ0U0ML85", "C02FJOJ9ML85", "C02FL3R8ML85", "C02FN2ZHML85", "C02FP8NJML85", "C02FP8P8ML85", "C02FP8QHML85", "C02G15YLML85", "C02G15YVML85", "C02G160GML85", "C02G40YLML85", "C02G73QCML85", "C02G73XNML85", "C02G73ZGML85", "C02G768GML85", "C02GG2D9ML85", "C02GG2EAML85", "C02GG2F9ML85", "C02GG2KZML85", "C02GG2LNML85", "C02GG2MYML85", "C02GH08ZML85", "C02GH09JML85", "C02GH0A5ML85" ],
+      "discountProhibited" : false,
+      "product" : {
+        "meta" : {
+          "href" : "https://api.moysklad.ru/api/remap/1.2/entity/product/a5f6f1e3-d849-11ec-0a80-01be00244d21",
+          "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/product/metadata",
+          "type" : "product",
+          "mediaType" : "application/json",
+          "uuidHref" : "https://online.moysklad.ru/app/#good/edit?id=a5f6eaee-d849-11ec-0a80-01be00244d1f"
+        }
+      },
+      "stock" : 1.0,
+      "reserve" : 0.0,
+      "inTransit" : 0.0,
+      "quantity" : 1.0
+    }, {
+      "meta" : {
+        "href" : "https://api.moysklad.ru/api/remap/1.2/entity/variant/177a1295-7022-11ef-0a80-0e3a000ce624",
+        "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/variant/metadata",
+        "type" : "variant",
+        "mediaType" : "application/json",
+        "uuidHref" : "https://online.moysklad.ru/app/#feature/edit?id=1779f800-7022-11ef-0a80-0e3a000ce622"
+      },
+      "id" : "177a1295-7022-11ef-0a80-0e3a000ce624",
+      "accountId" : "0defad53-ee34-11eb-0a80-04fd00015f8f",
+      "updated" : "2024-09-18 13:13:22.361",
+      "name" : "Ноутбук Apple MacBook Pro 13\" Model A2251 2020 i7 32Gb SSD 500Gb TouchBar 4 Thunderbolt (B)",
+      "code" : "03623",
+      "externalCode" : "HfZZidBIhf2kHZmMCehsg3",
+      "archived" : false,
+      "characteristics" : [ {
+        "meta" : {
+          "href" : "https://api.moysklad.ru/api/remap/1.2/entity/variant/metadata/characteristics/a20e988c-219f-11ee-0a80-08cc00005fd7",
+          "type" : "attributemetadata",
+          "mediaType" : "application/json"
+        },
+        "id" : "a20e988c-219f-11ee-0a80-08cc00005fd7",
+        "name" : "Категория",
+        "value" : "B"
+      } ],
+      "images" : {
+        "meta" : {
+          "href" : "https://api.moysklad.ru/api/remap/1.2/entity/variant/177a1295-7022-11ef-0a80-0e3a000ce624/images",
+          "type" : "image",
+          "mediaType" : "application/json",
+          "size" : 0,
+          "limit" : 1000,
+          "offset" : 0
+        }
+      },
+      "salePrices" : [ {
+        "value" : 8000000.0,
+        "currency" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/0e237a72-ee34-11eb-0a80-09c500003365",
+            "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+            "type" : "currency",
+            "mediaType" : "application/json",
+            "uuidHref" : "https://online.moysklad.ru/app/#currency/edit?id=0e237a72-ee34-11eb-0a80-09c500003365"
+          }
+        },
+        "priceType" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/0e248e2b-ee34-11eb-0a80-09c500003366",
+            "type" : "pricetype",
+            "mediaType" : "application/json"
+          },
+          "id" : "0e248e2b-ee34-11eb-0a80-09c500003366",
+          "name" : "Цена розница",
+          "externalCode" : "cbcf493b-55bc-11d9-848a-00112f43529a"
+        }
+      }, {
+        "value" : 8500000.0,
+        "currency" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/0e237a72-ee34-11eb-0a80-09c500003365",
+            "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+            "type" : "currency",
+            "mediaType" : "application/json",
+            "uuidHref" : "https://online.moysklad.ru/app/#currency/edit?id=0e237a72-ee34-11eb-0a80-09c500003365"
+          }
+        },
+        "priceType" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/6a196cc2-8931-11ee-0a80-09970012548b",
+            "type" : "pricetype",
+            "mediaType" : "application/json"
+          },
+          "id" : "6a196cc2-8931-11ee-0a80-09970012548b",
+          "name" : "Цена маркетплейс",
+          "externalCode" : "b3384235-36b2-4fc4-b310-2898e69bbe46"
+        }
+      }, {
+        "value" : 0.0,
+        "currency" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/0e237a72-ee34-11eb-0a80-09c500003365",
+            "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+            "type" : "currency",
+            "mediaType" : "application/json",
+            "uuidHref" : "https://online.moysklad.ru/app/#currency/edit?id=0e237a72-ee34-11eb-0a80-09c500003365"
+          }
+        },
+        "priceType" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/6a196ed7-8931-11ee-0a80-09970012548c",
+            "type" : "pricetype",
+            "mediaType" : "application/json"
+          },
+          "id" : "6a196ed7-8931-11ee-0a80-09970012548c",
+          "name" : "Цена с НДС",
+          "externalCode" : "20c01bd6-7070-4f1c-be3e-7ccff8fab593"
+        }
+      }, {
+        "value" : 9500000.0,
+        "currency" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/0e237a72-ee34-11eb-0a80-09c500003365",
+            "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+            "type" : "currency",
+            "mediaType" : "application/json",
+            "uuidHref" : "https://online.moysklad.ru/app/#currency/edit?id=0e237a72-ee34-11eb-0a80-09c500003365"
+          }
+        },
+        "priceType" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/9100fd5b-943f-11ed-0a80-100800045a8c",
+            "type" : "pricetype",
+            "mediaType" : "application/json"
+          },
+          "id" : "9100fd5b-943f-11ed-0a80-100800045a8c",
+          "name" : "Цена до скидки",
+          "externalCode" : "f7651362-5f4f-4083-8826-2cf8ec28db92"
+        }
+      }, {
+        "value" : 0.0,
+        "currency" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/0e237a72-ee34-11eb-0a80-09c500003365",
+            "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+            "type" : "currency",
+            "mediaType" : "application/json",
+            "uuidHref" : "https://online.moysklad.ru/app/#currency/edit?id=0e237a72-ee34-11eb-0a80-09c500003365"
+          }
+        },
+        "priceType" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/6a196fcf-8931-11ee-0a80-09970012548d",
+            "type" : "pricetype",
+            "mediaType" : "application/json"
+          },
+          "id" : "6a196fcf-8931-11ee-0a80-09970012548d",
+          "name" : "Цена мелкий опт",
+          "externalCode" : "048b7aa4-6522-444d-84d3-bd909a6fa8c0"
+        }
+      }, {
+        "value" : 0.0,
+        "currency" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/0e237a72-ee34-11eb-0a80-09c500003365",
+            "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+            "type" : "currency",
+            "mediaType" : "application/json",
+            "uuidHref" : "https://online.moysklad.ru/app/#currency/edit?id=0e237a72-ee34-11eb-0a80-09c500003365"
+          }
+        },
+        "priceType" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/6a197049-8931-11ee-0a80-09970012548e",
+            "type" : "pricetype",
+            "mediaType" : "application/json"
+          },
+          "id" : "6a197049-8931-11ee-0a80-09970012548e",
+          "name" : "Цена средний опт",
+          "externalCode" : "9555ce05-20db-46c3-933f-467e71c92617"
+        }
+      }, {
+        "value" : 0.0,
+        "currency" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/0e237a72-ee34-11eb-0a80-09c500003365",
+            "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/currency/metadata",
+            "type" : "currency",
+            "mediaType" : "application/json",
+            "uuidHref" : "https://online.moysklad.ru/app/#currency/edit?id=0e237a72-ee34-11eb-0a80-09c500003365"
+          }
+        },
+        "priceType" : {
+          "meta" : {
+            "href" : "https://api.moysklad.ru/api/remap/1.2/context/companysettings/pricetype/6a1970a3-8931-11ee-0a80-09970012548f",
+            "type" : "pricetype",
+            "mediaType" : "application/json"
+          },
+          "id" : "6a1970a3-8931-11ee-0a80-09970012548f",
+          "name" : "Цена крупный опт",
+          "externalCode" : "54e903f3-dee9-491f-83ea-1f0206993c99"
+        }
+      } ],
+      "barcodes" : [ {
+        "ean13" : "2000000071756"
+      } ],
+      "things" : [ "C02DW8RQML85", "C02F51H6ML85", "C02FJ09VML85", "C02FJ0DMML85", "C02FJ0EAML85", "C02FJ0EFML85", "C02FJ0F0ML85", "C02FJ0P7ML85", "C02FJ0QZML85", "C02FJOJ9ML85", "C02FL3R1ML85", "C02FN2ZJML85", "C02FP3B6ML85", "C02FP3BGML85", "C02FP8NNML85", "C02FP8P8ML85", "C02FP8RAML85", "C02G15XBML85", "C02G15XJML85", "C02G15YLML85", "C02G160GML85", "C02G40Y4ML85", "C02G73TDML85", "C02G73U4ML85", "C02G73UEML85", "C02G73VGML85", "C02G73XHML85", "C02G73ZGML85", "C02GG2EAML85", "C02GG2GDML85", "C02GG2KZML85", "CO2GG2FVML85" ],
+      "discountProhibited" : false,
+      "product" : {
+        "meta" : {
+          "href" : "https://api.moysklad.ru/api/remap/1.2/entity/product/a5f6f1e3-d849-11ec-0a80-01be00244d21",
+          "metadataHref" : "https://api.moysklad.ru/api/remap/1.2/entity/product/metadata",
+          "type" : "product",
+          "mediaType" : "application/json",
+          "uuidHref" : "https://online.moysklad.ru/app/#good/edit?id=a5f6eaee-d849-11ec-0a80-01be00244d1f"
+        }
+      },
+      "stock" : 7.0,
+      "reserve" : 0.0,
+      "inTransit" : 0.0,
+      "quantity" : 7.0
+    }
+    ]
+}
