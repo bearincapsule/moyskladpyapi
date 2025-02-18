@@ -11,7 +11,7 @@ EMAILS_FILE = "used_emails.json"
 
 API_BASE_URL = 'https://api.moysklad.ru/api/remap/1.2/entity'
 FOLDERS_URL = f'{API_BASE_URL}/productfolder'
-ASSORTMENT_URL = f'{API_BASE_URL}/assortment'
+ASSORTMENT_URL = f'{API_BASE_URL}/assortment?filter=stockMode=positiveOnly'
 
 auth = None
 
@@ -84,7 +84,7 @@ def export_to_excel(products, folder_name):
             'Barcode': ', '.join(
                 ''.join(filter(str.isdigit, bc.get('ean13', ''))) for bc in p.get('barcodes', [])
             )
-            ''
+            'Stock': p.get('stock', {}).get('quantity', 0),   
         }
         for p in products
     ])
