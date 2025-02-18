@@ -37,7 +37,7 @@ async def fetch_product_details(session, product):
     return {
         'name': product.get('name'),
         'code': product.get('code'),
-        'path': product.get('folder', {}).get('name'),
+        'path': product.get('folder', {}).get('pathName') + '/' + product.get('folder', {}).get('name'),
         'stock': product.get('stock', 0),
         'days': product.get('stockDays', 0),
         'category': category_value,
@@ -49,7 +49,7 @@ async def main():
         response = await fetch(session, url)
         products = response.get('rows', [])
 
-        tasks = [fetch_product_details(session, product) for product in products]
+        tasks = [fetch_product_details(session, product) for product in products[:5]]
         results = await asyncio.gather(*tasks)
 
         # Prepare data for export
@@ -73,11 +73,11 @@ async def main():
         # Create a DataFrame and export to Excel
         df = pd.DataFrame(data)
         pd.set_option('display.max_colwidth', None)  # Show full content of each cell
-        pd.set_option('display.width', 1000)         # Increase display width
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = f"products_{timestamp}.xlsx"
-        df.to_excel(filename, index=False)
-        print(f"Data exported to {filename}")
+        pd.set_option('display.width', 50)         # Increase display width
+        # timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        # filename = f"products_{timestamp}.xlsx"
+        # df.to_excel(filename, index=False)
+        print(df)
 
 # Run the main function
 asyncio.run(main())
