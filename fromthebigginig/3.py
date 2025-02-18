@@ -67,7 +67,7 @@ def add_dropdown_and_formatting(file_path, sheet_name='Sheet1', start_row=2, end
     wb.save(file_path)
     print(f"Dropdowns and formatting applied to {file_path}")
 
-auth = HTTPBasicAuth('warehousetseh2@gmail.com', 'PurestSklad6632!')
+auth = HTTPBasicAuth('email', 'psswd')
 base_url = "https://api.moysklad.ru/api/remap/1.2/report/stock/all"
 included_price_types = ["Цена розница", "Цена маркетплейс", "Цена мелкий опт", "Цена средний опт"]
 
