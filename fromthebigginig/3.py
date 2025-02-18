@@ -4,11 +4,13 @@ from openpyxl.styles import PatternFill, Font, Alignment
 from openpyxl.formatting.rule import CellIsRule
 import aiohttp
 import asyncio
+from aiohttp import BasicAuth
 import pandas as pd
 from datetime import datetime
 from requests.auth import HTTPBasicAuth
 import logging
 from aiohttp import ClientSession, ClientTimeout
+from tqdm.asyncio import tqdm
 
 # Configure logging to log to a file
 logging.basicConfig(level=logging.INFO, filename='app.log', filemode='w',
@@ -48,7 +50,7 @@ def add_dropdown_and_formatting(file_path, sheet_name='Sheet1', start_row=2, end
                                       CellIsRule(operator='equal', formula=['"Нет"'], stopIfTrue=True, fill=orange_fill))
     
     # Apply filter to line 195
-    ws.auto_filter.ref = f"A1:A{end_row}"
+    ws.auto_filter.ref = f"A1:Z{end_row}"
     
     ws.column_dimensions['B'].width = 50
     ws.column_dimensions['C'].width = 10
@@ -67,14 +69,16 @@ def add_dropdown_and_formatting(file_path, sheet_name='Sheet1', start_row=2, end
     wb.save(file_path)
     print(f"Dropdowns and formatting applied to {file_path}")
 
-auth = HTTPBasicAuth('email', 'psswd')
+USERNAME = "warehousetseh2@gmail.com"
+PASSWORD = "PurestSklad6632!"
+auth = BasicAuth(USERNAME, PASSWORD)
 base_url = "https://api.moysklad.ru/api/remap/1.2/report/stock/all"
 included_price_types = ["Цена розница", "Цена маркетплейс", "Цена мелкий опт", "Цена средний опт"]
 
 async def fetch(session, url, retries=3):
     for attempt in range(retries):
         try:
-            async with session.get(url, auth=aiohttp.BasicAuth(auth.username, auth.password)) as response:
+            async with session.get(url, auth=auth) as response:
                 response.raise_for_status()
                 return await response.json()
         except (aiohttp.ClientError, asyncio.TimeoutError) as e:
@@ -149,7 +153,11 @@ async def main():
                 return await fetch_product_details(session, product)
 
         tasks = [limited_fetch_product_details(product) for product in products]
-        results = await asyncio.gather(*tasks)
+
+        # Use tqdm to display a progress bar
+        results = []
+        for result in tqdm(asyncio.as_completed(tasks), total=len(tasks), desc="Fetching product details"):
+            results.append(await result)
 
         # Prepare data for export
         data = []
