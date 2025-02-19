@@ -137,32 +137,33 @@ async def fetch(session: ClientSession, url: str, retries: int = 5) -> Optional[
     """
     Fetches JSON data from a URL using the provided session. Retries on failure with specific handling for 429 errors.
     """
-    for attempt in range(retries):
-        try:
-            async with session.get(url, auth=auth) as response:
-                response.raise_for_status()
-                return await response.json()
-        except aiohttp.ClientResponseError as e:
-            if e.status == 429:  # Too Many Requests
-                logging.warning(f"Attempt {attempt + 1} for {url} failed with 429: {e}")
+    async with semaphore:
+        for attempt in range(retries):
+            try:
+                async with session.get(url, auth=auth) as response:
+                    response.raise_for_status()
+                    return await response.json()
+            except aiohttp.ClientResponseError as e:
+                if e.status == 429:  # Too Many Requests
+                    logging.warning(f"Attempt {attempt + 1} for {url} failed with 429: {e}")
+                    if attempt < retries - 1:
+                        retry_after = int(e.headers.get('Retry-After', 1))
+                        logging.info(f"Retrying after {retry_after} seconds...")
+                        await asyncio.sleep(retry_after)
+                    else:
+                        logging.error(f"All {retries} attempts failed for URL: {url}")
+                        return None
+                else:
+                    logging.error(f"Request failed for {url}: {e}")
+                    return None
+            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                logging.warning(f"Attempt {attempt + 1} for {url} failed: {e}")
                 if attempt < retries - 1:
-                    retry_after = int(e.headers.get('Retry-After', 1))
-                    logging.info(f"Retrying after {retry_after} seconds...")
-                    await asyncio.sleep(retry_after)
+                    await asyncio.sleep(1)  # Fixed delay between retries
                 else:
                     logging.error(f"All {retries} attempts failed for URL: {url}")
                     return None
-            else:
-                logging.error(f"Request failed for {url}: {e}")
-                return None
-        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
-            logging.warning(f"Attempt {attempt + 1} for {url} failed: {e}")
-            if attempt < retries - 1:
-                await asyncio.sleep(1)  # Fixed delay between retries
-            else:
-                logging.error(f"All {retries} attempts failed for URL: {url}")
-                return None
-    return None
+        return None
 
 async def fetch_product_details(session: ClientSession, product: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
@@ -174,8 +175,10 @@ async def fetch_product_details(session: ClientSession, product: Dict[str, Any])
         return None
 
     await asyncio.sleep(0.005)  # Small delay between requests
+    logging.info(f"Fetching details for product: {product.get('name')}")
     metaid = await fetch(session, meta_url)
     if metaid is None:
+        logging.warning(f"Failed to fetch details for product: {product.get('name')}")
         return None
 
     # Default category value
@@ -231,10 +234,12 @@ async def main() -> None:
     timeout = ClientTimeout(total=30)
 
     async with ClientSession(timeout=timeout) as session:
+        logging.info("Fetching all products...")
         products = await fetch_all_products(session, base_url)
         if not products:
             logging.error("Failed to fetch initial product data.")
             return
+        logging.info(f"Fetched {len(products)} products.")
 
         async def limited_fetch_product_details(product: Dict[str, Any]) -> Optional[Dict[str, Any]]:
             async with semaphore:
@@ -244,8 +249,16 @@ async def main() -> None:
 
         # Use tqdm to display progress as tasks complete
         results = []
+        logging.info("Fetching product details...")
         for result in tqdm(asyncio.as_completed(tasks), total=len(tasks), desc=color.YELLOW + "Загружаю данные" + color.END):
-            results.append(await result)
+            try:
+                details = await result
+                results.append(details)
+                logging.info(f"Fetched details for product: {details['name'] if details else 'Unknown'}")
+            except Exception as e:
+                logging.error(f"Error fetching product details: {e}")
+
+        logging.info("Fetched product details.")
 
         # Prepare data for export
         data = []
