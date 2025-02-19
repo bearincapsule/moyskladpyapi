@@ -130,8 +130,19 @@ auth = BasicAuth(USERNAME, PASSWORD)
 base_url = "https://api.moysklad.ru/api/remap/1.2/report/stock/all"
 included_price_types = ["Цена розница", "Цена маркетплейс", "Цена мелкий опт", "Цена средний опт"]
 
-# Define a global semaphore to limit concurrent HTTP requests
-semaphore = asyncio.Semaphore(5)
+# Define a global queue to limit concurrent HTTP requests
+queue = asyncio.Queue(maxsize=5)
+
+async def worker(session: ClientSession):
+    """
+    Worker function to process items from the queue.
+    """
+    while True:
+        url, retries, result = await queue.get()
+        try:
+            result.append(await fetch(session, url, retries))
+        finally:
+            queue.task_done()
 
 async def fetch(session: ClientSession, url: str, retries: int = 5) -> Optional[Dict[str, Any]]:
     """
@@ -236,16 +247,25 @@ async def main() -> None:
             logging.error("Failed to fetch initial product data.")
             return
 
-        async def limited_fetch_product_details(product: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-            async with semaphore:
-                return await fetch_product_details(session, product)
-
-        tasks = [limited_fetch_product_details(product) for product in products]
-
-        # Use tqdm to display progress as tasks complete
+        # Create a list to store results
         results = []
-        for result in tqdm(asyncio.as_completed(tasks), total=len(tasks), desc=color.YELLOW + "Загружаю данные" + color.END):
-            results.append(await result)
+
+        # Create worker tasks to process the queue
+        workers = [asyncio.create_task(worker(session)) for _ in range(5)]
+
+        # Enqueue tasks with progress bar
+        for product in tqdm(products, desc=color.YELLOW + "Enqueuing tasks" + color.END):
+            await queue.put((product.get('meta', {}).get('href'), 5, results))
+
+        # Wait until the queue is fully processed with progress bar
+        with tqdm(total=queue.qsize(), desc=color.YELLOW + "Processing tasks" + color.END) as pbar:
+            while not queue.empty():
+                await asyncio.sleep(0.1)
+                pbar.update(1)
+
+        # Cancel worker tasks
+        for w in workers:
+            w.cancel()
 
         # Prepare data for export
         data = []
