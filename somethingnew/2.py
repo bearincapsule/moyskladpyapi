@@ -40,12 +40,6 @@ class color:
     UNDERLINE = '\033[4m'
     END = '\033[0m'
 
-print(
-    color.BOLD + color.RED +
-    'Please close product.xlsx if it is open. The script cannot overwrite an open file.' +
-    color.END
-)
-
 # ------------------------------------------------------------------------------
 # Comparison logic for previous runs
 # ------------------------------------------------------------------------------
@@ -53,14 +47,6 @@ def compare_with_previous_run(
     current_data: pd.DataFrame,
     previous_file: str
 ) -> pd.DataFrame:
-    """
-    Compare the current data with the previous run (CSV).
-    Return a new DataFrame including a 'Change' column marking differences:
-      - 'New' for newly added items
-      - 'Disappeared' for missing items
-      - 'Stock Changed' for changed stock
-      - '' (empty string) if unchanged
-    """
     # If no previous CSV, just return current with no 'Change' flagged
     if not os.path.exists(previous_file):
         current_data['Change'] = ''
@@ -200,14 +186,11 @@ def add_dropdown_and_formatting(file_path: str, sheet_name: str = 'Sheet1', star
 # ------------------------------------------------------------------------------
 # Auth info (adjust these or prompt user)
 # ------------------------------------------------------------------------------
-USERNAME = "warehousetseh2@gmail.com"
-PASSWORD = "PurestSklad6632!"
+USERNAME = input("Enter your email: ")
+PASSWORD = getpass.getpass("Enter your password: ")
 auth = BasicAuth(USERNAME, PASSWORD)
 
-# If you only want products with positive stock, keep this filter:
-#   ?filter=stockMode=positiveOnly
-# If you truly want *all* products, remove it.
-base_url = "https://api.moysklad.ru/api/remap/1.2/entity/assortment?filter=stockMode=positiveOnly"
+base_url = "https://api.moysklad.ru/api/remap/1.2/entity/assortment"
 
 # ------------------------------------------------------------------------------
 # Fetching logic
@@ -226,9 +209,6 @@ async def fetch(
     url: str,
     retries: int = 5
 ) -> Optional[Dict[str, Any]]:
-    """
-    Fetch JSON from a URL with basic retries, including handling 429 responses.
-    """
     for attempt in range(retries):
         try:
             async with session.get(url, auth=auth) as response:
@@ -260,28 +240,27 @@ async def fetch(
 
 async def fetch_product_details(
     session: ClientSession,
-    product: Dict[str, Any]
+    product: Dict[str, Any],
+    base_product_paths: Dict[str, str]
 ) -> Optional[Dict[str, Any]]:
-    """
-    Fetch detail for a single product (if variant, fetch parent info for path).
-    Returns structured dict with relevant fields.
-    """
-    # If it's a variant, we must fetch the parent product to get full path
-    path_name = product.get('pathName') or ""
+
+    path_name = product.get('pathName', "")
+
+    # If it's a base product, store its path
+    if product.get('variantsCount', -1) > 0:
+        base_product_paths[product['id']] = path_name
+
+    # If it's a variant, get the parent product's path
     if product.get('meta', {}).get('type') == 'variant':
-        parent_href = product.get('product', {}).get('meta', {}).get('href')
-        if parent_href:
-            parent_json = await fetch(session, parent_href)
-            if parent_json and 'pathName' in parent_json:
-                path_name = parent_json['pathName']
+        parent_id = product.get('product', {}).get('meta', {}).get('href', '').split('/')[-1]
+        path_name = base_product_paths.get(parent_id, "")
 
     # Attempt to extract "Категория" from characteristics if present
     category_value = "base"
     characteristics: List[Dict[str, Any]] = product.get('characteristics', [])
     for char in characteristics:
-        if char.get('name') == "Категория":
-            category_value = str(char.get('value', 'base'))
-            break
+        category_value = str(char.get('value', 'base'))
+        break
 
     # Filter only salePrices we care about
     sale_prices = product.get('salePrices', [])
@@ -298,40 +277,39 @@ async def fetch_product_details(
         'stock': product.get('stock', 0),
         'days': product.get('stockDays', 0),
         'category': category_value,
-        'prices': prices
+        'prices': prices,
+        'id': product.get('id')
     }
 
-async def fetch_all_products(
-    session: ClientSession,
-    base_url: str,
-    limit: int = PAGE_SIZE
-) -> List[Dict[str, Any]]:
+async def fetch_all_products(session: ClientSession, base_url: str, limit: int = PAGE_SIZE):
     """
-    Fetch all products using pagination until no more pages.
+    Fetch all products using pagination with a global progress bar.
     """
     offset = 0
     all_items = []
+    base_product_paths = {}
 
-    while True:
-        # Note: add filter if you want only positive stock:
-        # url = f"{base_url}?filter=stockMode=positiveOnly&limit={limit}&offset={offset}"
-        url = f"{base_url}&limit={limit}&offset={offset}"
-        logging.info(f"Fetching page offset={offset} ...")
+    with tqdm(desc="Fetching Products", unit="batch", leave=False) as pbar:
+        while True:
+            url = f"{base_url}?limit={limit}&offset={offset}"
+            logging.info(f"Fetching page offset={offset} ...")
 
-        data = await fetch(session, url)
-        if not data:
-            logging.warning("No data returned, stopping pagination.")
-            break
+            data = await fetch(session, url)
+            if not data:
+                logging.warning("No data returned, stopping pagination.")
+                break
 
-        rows = data.get('rows', [])
-        if not rows:
-            logging.info("No more rows; pagination complete.")
-            break
+            rows = data.get('rows', [])
+            if not rows:
+                logging.info("No more rows; pagination complete.")
+                break
 
-        all_items.extend(rows)
-        offset += limit
+            all_items.extend(rows)
+            offset += limit
+            pbar.update(1)  # Update progress bar for each batch
 
-    return all_items
+    return all_items, base_product_paths
+
 
 # ------------------------------------------------------------------------------
 # Check if the Excel file is open and prompt the user to close it
@@ -360,15 +338,21 @@ def update_database(data: pd.DataFrame, db_path: str):
     data.to_sql('products', conn, if_exists='replace', index=False)
     conn.close()
     print(color.GREEN + f"Data saved into database {db_path}" + color.END)
+    
+def chunkify(lst, chunk_size):
+    """Splits a list into chunks of a given size."""
+    for i in range(0, len(lst), chunk_size):
+        yield lst[i:i + chunk_size]
 
 # ------------------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------------------
 async def main():
-    filename = "products.xlsx"
-    db_path = "products.db"
+    filename = "all_products.xlsx"
+    db_path = "all_products.db"
     check_and_prompt_close_excel(filename)
     previous_csv = "last.csv"
+    CHUNK_SIZE = 1000
 
     # You can increase total=120 or so for large sets, but keep an eye on memory
     timeout = ClientTimeout(total=120)
@@ -377,114 +361,135 @@ async def main():
     semaphore = asyncio.Semaphore(MAX_REQUESTS)
 
     async with ClientSession(timeout=timeout) as session:
-        # 1) Fetch all products
-        logging.info("Fetching list of all products...")
-        products = await fetch_all_products(session, base_url)
-        if not products:
-            logging.error("No products fetched. Exiting.")
+        with tqdm(total=5, desc="Overall Progress", unit="step") as global_pbar:
+            # 1) Fetch all products
+            logging.info("Fetching list of all products...")
+            products, base_product_paths = await fetch_all_products(session, base_url)
+            if not products:
+                logging.error("No products fetched. Exiting.")
+                return
+            logging.info(f"Fetched {len(products)} products total.")
+            global_pbar.update(1)
+
+            # Separate base products and variants
+            base_products = [p for p in products if p.get('variantsCount', -1) > 0]
+            variants = [p for p in products if p.get('meta', {}).get('type') == 'variant']
+
+            # Process base products first
+            results = []
+            async def limited_fetch_product_details_wrapper(prod):
+                async with semaphore:
+                    return await fetch_product_details(session, prod, base_product_paths)
+
+            for chunk in chunkify(base_products, CHUNK_SIZE):
+                tasks = [limited_fetch_product_details_wrapper(p) for p in chunk]
+                for coro in tqdm(
+                    asyncio.as_completed(tasks),
+                    total=len(tasks),
+                    desc=color.YELLOW + "Fetching base product details" + color.END
+                ):
+                    try:
+                        details = await coro
+                        results.append(details)
+                    except Exception as ex:
+                        logging.error(f"Error in fetch_product_details: {ex}")
+                        
+            global_pbar.update(1)
+
+            # Process variants
+            for chunk in chunkify(variants, CHUNK_SIZE):
+                tasks = [limited_fetch_product_details_wrapper(p) for p in chunk]
+                for coro in tqdm(
+                    asyncio.as_completed(tasks),
+                    total=len(tasks),
+                    desc=color.YELLOW + "Fetching variant details" + color.END
+                ):
+                    try:
+                        details = await coro
+                        results.append(details)
+                    except Exception as ex:
+                        logging.error(f"Error in fetch_product_details: {ex}")
+
+            logging.info(f"Fetched details for {len(results)} products.")
+            
+            global_pbar.update(1)
+
+        # 3) Convert raw results to a DataFrame
+        out_data = []
+        for r in results:
+            if not r:
+                continue
+            base_data = {
+                'Путь': r['path'],
+                'Наименование': r['name'],
+                'Категория': r['category'],
+                'Код товара': r['code'],
+                'Порядковый номер': None,
+                'Включено в план размещения': "-",
+                'Фото на серевере': "-",
+                'Дней на складе': r['days'],
+                'Остаток': r['stock'],
+                'ID': r['id']
+            }
+            # Add each relevant price
+            for price_name, price_value in r['prices'].items():
+                base_data[price_name] = price_value
+            out_data.append(base_data)
+
+        df_current = pd.DataFrame(out_data)
+        global_pbar.update(1)
+
+        # 4) Compare to previous CSV (if exists), to track changes
+        combined_data = compare_with_previous_run(df_current, previous_csv)
+        global_pbar.update(1)
+
+        # 5) Write or append a sheet in the Excel file
+        timestamp = datetime.now().strftime("Export_%Y%m%d_%H%M%S")
+
+        try:
+            if os.path.exists(filename):
+                with pd.ExcelWriter(filename, engine='openpyxl', mode='a') as writer:
+                    combined_data.to_excel(writer, sheet_name=timestamp, index=False)
+            else:
+                with pd.ExcelWriter(filename, engine='openpyxl') as writer:
+                    combined_data.to_excel(writer, sheet_name=timestamp, index=False)
+
+            print(
+                color.GREEN +
+                f"Data saved into {filename}, sheet name: {timestamp}" +
+                color.END
+            )
+        except Exception as e:
+            logging.error(f"Failed to write to Excel: {e}")
             return
-        logging.info(f"Fetched {len(products)} products total.")
+        global_pbar.update(1)
 
-        # 2) Gather details in chunks to avoid creating huge tasks at once
-        CHUNK_SIZE = 1000  # Adjust if you have memory constraints
-        results = []
+        # 6) Save current subset (Код товара, Остаток) to CSV for next comparison
+        df_current[['Код товара', 'Остаток']].to_csv(previous_csv, index=False)
+        global_pbar.update(1)
 
-        def chunkify(lst, size):
-            for i in range(0, len(lst), size):
-                yield lst[i : i + size]
+        # 7) Highlight changes in the newly created sheet
+        add_dropdown_and_formatting(filename, sheet_name=timestamp)
+        global_pbar.update(1)
+        wb = openpyxl.load_workbook(filename)
+        ws = wb[timestamp]
+        highlight_changes(ws, combined_data)
+        wb.save(filename)
 
-        async def limited_fetch_product_details_wrapper(prod):
-            async with semaphore:
-                return await fetch_product_details(session, prod)
+        # 8) Save data to the database
+        update_database(df_current, db_path)
+        global_pbar.update(1)
+        
 
-        # For progress display
-        total_products = len(products)
-        processed_count = 0
+        # 9) Optionally, open the Excel file (Windows only)
+        try:
+            os.startfile(filename)
+        except Exception as e:
+            logging.error(f"Could not open file {filename}: {e}")
 
-        for chunk in chunkify(products, CHUNK_SIZE):
-            tasks = [limited_fetch_product_details_wrapper(p) for p in chunk]
-            for coro in tqdm(
-                asyncio.as_completed(tasks),
-                total=len(tasks),
-                desc=color.YELLOW + "Fetching product details" + color.END
-            ):
-                try:
-                    details = await coro
-                    results.append(details)
-                except Exception as ex:
-                    logging.error(f"Error in fetch_product_details: {ex}")
-                processed_count += 1
-
-        logging.info(f"Fetched details for {processed_count} products.")
-
-    # 3) Convert raw results to a DataFrame
-    out_data = []
-    for r in results:
-        if not r:
-            continue
-        base_data = {
-            'Путь': r['path'],
-            'Наименование': r['name'],
-            'Категория': r['category'],
-            'Код товара': r['code'],
-            'Порядковый номер': None,
-            'Включено в план размещения': "-",
-            'Фото на серевере': "-",
-            'Дней на складе': r['days'],
-            'Остаток': r['stock']
-        }
-        # Add each relevant price
-        for price_name, price_value in r['prices'].items():
-            base_data[price_name] = price_value
-        out_data.append(base_data)
-
-    df_current = pd.DataFrame(out_data)
-
-    # 4) Compare to previous CSV (if exists), to track changes
-    combined_data = compare_with_previous_run(df_current, previous_csv)
-
-    # 5) Write or append a sheet in the Excel file
-    timestamp = datetime.now().strftime("Export_%Y%m%d_%H%M%S")
-
-    try:
-        if os.path.exists(filename):
-            with pd.ExcelWriter(filename, engine='openpyxl', mode='a') as writer:
-                combined_data.to_excel(writer, sheet_name=timestamp, index=False)
-        else:
-            with pd.ExcelWriter(filename, engine='openpyxl') as writer:
-                combined_data.to_excel(writer, sheet_name=timestamp, index=False)
-
-        print(
-            color.GREEN +
-            f"Data saved into {filename}, sheet name: {timestamp}" +
-            color.END
-        )
-    except Exception as e:
-        logging.error(f"Failed to write to Excel: {e}")
-        return
-
-    # 6) Save current subset (Код товара, Остаток) to CSV for next comparison
-    df_current[['Код товара', 'Остаток']].to_csv(previous_csv, index=False)
-
-    # 7) Highlight changes in the newly created sheet
-    add_dropdown_and_formatting(filename, sheet_name=timestamp)
-    wb = openpyxl.load_workbook(filename)
-    ws = wb[timestamp]
-    highlight_changes(ws, combined_data)
-    wb.save(filename)
-
-    # 8) Save data to the database
-    update_database(df_current, db_path)
-
-    # 9) Optionally, open the Excel file (Windows only)
-    try:
-        os.startfile(filename)
-    except Exception as e:
-        logging.error(f"Could not open file {filename}: {e}")
-
-# ------------------------------------------------------------------------------
-# Script entry point
-# ------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
+    # Script entry point
+    # ------------------------------------------------------------------------------
 if __name__ == '__main__':
     try:
         asyncio.run(main())
